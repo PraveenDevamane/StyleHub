@@ -87,10 +87,11 @@ export async function uploadToGoogleDrive(
       folderId: defaultFolderId,
     };
 
+    // Use text/plain Content-Type to prevent triggering CORS preflight check on Google Apps Script
     const uploadRes = await fetch(uploadUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'text/plain',
       },
       body: JSON.stringify(payload),
     });
@@ -143,10 +144,11 @@ export async function deleteFromGoogleDrive(fileUrl: string): Promise<boolean> {
       fileId: fileId,
     };
 
+    // Use text/plain Content-Type to prevent CORS preflight check
     const response = await fetch(uploadUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'text/plain',
       },
       body: JSON.stringify(payload),
     });

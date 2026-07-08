@@ -19,6 +19,7 @@ import { db } from '@/services/firebase';
 import { useQueryClient } from '@tanstack/react-query';
 import CachedImage from '@/components/CachedImage';
 import { Product } from '@/types';
+import { deleteFromGoogleDrive } from '@/services/googleDrive';
 
 export default function AdminProductsListScreen() {
   const router = useRouter();
@@ -55,7 +56,6 @@ export default function AdminProductsListScreen() {
               // Delete images from Google Drive if any exist
               const imageUrls = product.image_urls || product.product_images?.map((img) => img.image_url) || [];
               if (imageUrls.length > 0) {
-                const { deleteFromGoogleDrive } = await import('@/services/googleDrive');
                 for (const url of imageUrls) {
                   await deleteFromGoogleDrive(url);
                 }
