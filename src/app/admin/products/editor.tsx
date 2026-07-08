@@ -28,6 +28,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import Button from '@/components/Button';
 import CachedImage from '@/components/CachedImage';
 import { classifyStorageLocation, LocationSuggestion } from '@/services/locationClassifier';
+import { showAlert } from '@/utils/alert';
 
 // Default categories to auto-seed if Firestore categories collection is empty
 const DEFAULT_CATEGORIES = [
@@ -437,7 +438,7 @@ export default function AdminProductEditorScreen() {
     if (Platform.OS !== 'web') {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Camera roll permissions are required to upload product images.');
+        showAlert('Permission Denied', 'Camera roll permissions are required to upload product images.');
         return false;
       }
     }
@@ -464,7 +465,7 @@ export default function AdminProductEditorScreen() {
       }
     } catch (e) {
       console.error(e);
-      Alert.alert('Error', 'An error occurred during image selection.');
+      showAlert('Error', 'An error occurred during image selection.');
     }
   };
 
@@ -534,7 +535,7 @@ export default function AdminProductEditorScreen() {
 
   const onSubmit = async (data: any) => {
     if (totalImages === 0) {
-      Alert.alert('Images Required', 'Please add at least one product image.');
+      showAlert('Images Required', 'Please add at least one product image.');
       return;
     }
 
@@ -621,12 +622,11 @@ export default function AdminProductEditorScreen() {
       }
       queryClient.invalidateQueries({ queryKey: ['admin', 'inventory_logs'] });
 
-      Alert.alert('Success', `Product ${isEditMode ? 'updated' : 'created'} successfully!`, [
-        { text: 'OK', onPress: () => router.replace('/admin/products') },
-      ]);
+      showAlert('Success', `Product ${isEditMode ? 'updated' : 'created'} successfully!`);
+      router.replace('/admin/products');
     } catch (err: any) {
       console.error(err);
-      Alert.alert('Error', err.message || 'An error occurred while saving the product.');
+      showAlert('Error', err.message || 'An error occurred while saving the product.');
     } finally {
       setSaving(false);
     }

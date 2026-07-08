@@ -25,6 +25,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import CachedImage from '@/components/CachedImage';
 import Button from '@/components/Button';
 import { Category } from '@/types';
+import { showAlert, showConfirm } from '@/utils/alert';
 
 export default function AdminCategoriesScreen() {
   const router = useRouter();
@@ -66,7 +67,7 @@ export default function AdminCategoriesScreen() {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Camera roll permissions are required.');
+        showAlert('Permission Denied', 'Camera roll permissions are required.');
         return;
       }
 
@@ -83,12 +84,12 @@ export default function AdminCategoriesScreen() {
         if (url) {
           setCatImageUrl(url);
         } else {
-          Alert.alert('Error', 'Image upload failed.');
+          showAlert('Error', 'Image upload failed.');
         }
       }
     } catch (e) {
       console.error(e);
-      Alert.alert('Error', 'Could not select image.');
+      showAlert('Error', 'Could not select image.');
     } finally {
       setUploading(false);
     }
@@ -106,7 +107,7 @@ export default function AdminCategoriesScreen() {
 
   const handleSave = async () => {
     if (!catName.trim()) {
-      Alert.alert('Required', 'Please enter a category name.');
+      showAlert('Required', 'Please enter a category name.');
       return;
     }
 
@@ -131,39 +132,31 @@ export default function AdminCategoriesScreen() {
 
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       handleCloseModal();
-      Alert.alert('Success', 'Category saved successfully.');
+      showAlert('Success', 'Category saved successfully.');
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to save category.');
+      showAlert('Error', e.message || 'Failed to save category.');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = (category: Category) => {
-    Alert.alert(
+  const handleDelete = async (category: Category) => {
+    const confirmed = await showConfirm(
       'Delete Category',
-      `Are you sure you want to delete "${category.name}"? This will delete all products under this category.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // Delete Firestore category document
-              const docRef = doc(db, 'categories', category.id);
-              await deleteDoc(docRef);
-
-              queryClient.invalidateQueries({ queryKey: ['categories'] });
-              queryClient.invalidateQueries({ queryKey: ['products'] });
-              Alert.alert('Success', 'Category deleted.');
-            } catch (e: any) {
-              Alert.alert('Error', e.message || 'Failed to delete category.');
-            }
-          },
-        },
-      ]
+      `Are you sure you want to delete "${category.name}"? This will delete all products under this category.`
     );
+    if (!confirmed) return;
+
+    try {
+      const docRef = doc(db, 'categories', category.id);
+      await deleteDoc(docRef);
+
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      showAlert('Success', 'Category deleted.');
+    } catch (e: any) {
+      showAlert('Error', e.message || 'Failed to delete category.');
+    }
   };
 
   const renderItem = ({ item }: { item: Category }) => {

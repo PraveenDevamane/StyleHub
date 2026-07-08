@@ -7,7 +7,6 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -21,6 +20,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import CachedImage from '@/components/CachedImage';
 import { Product } from '@/types';
 import { deleteFromGoogleDrive } from '@/services/googleDrive';
+import { showAlert, showConfirm } from '@/utils/alert';
 
 export default function AdminProductsListScreen() {
   const router = useRouter();
@@ -43,37 +43,30 @@ export default function AdminProductsListScreen() {
     searchQuery: debouncedSearch || undefined,
   });
 
-  const handleDelete = (product: Product) => {
-    Alert.alert(
+  const handleDelete = async (product: Product) => {
+    const confirmed = await showConfirm(
       'Delete Product',
-      `Are you sure you want to delete "${product.name}"? This will also remove all stock and image records.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // Delete images from Google Drive if any exist
-              const imageUrls = product.image_urls || product.product_images?.map((img) => img.image_url) || [];
-              if (imageUrls.length > 0) {
-                for (const url of imageUrls) {
-                  await deleteFromGoogleDrive(url);
-                }
-              }
-
-              const docRef = doc(db, 'products', product.id);
-              await deleteDoc(docRef);
-
-              queryClient.invalidateQueries({ queryKey: ['products'] });
-              Alert.alert('Success', 'Product deleted successfully.');
-            } catch (err: any) {
-              Alert.alert('Error', err.message || 'An unexpected error occurred.');
-            }
-          },
-        },
-      ]
+      `Are you sure you want to delete "${product.name}"? This will also remove all stock and image records.`
     );
+    if (!confirmed) return;
+
+    try {
+      // Delete images from Google Drive / Firebase Storage if any exist
+      const imageUrls = product.image_urls || product.product_images?.map((img) => img.image_url) || [];
+      if (imageUrls.length > 0) {
+        for (const url of imageUrls) {
+          await deleteFromGoogleDrive(url);
+        }
+      }
+
+      const docRef = doc(db, 'products', product.id);
+      await deleteDoc(docRef);
+
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      showAlert('Success', 'Product deleted successfully.');
+    } catch (err: any) {
+      showAlert('Error', err.message || 'An unexpected error occurred.');
+    }
   };
 
   const renderProductItem = ({ item }: { item: Product }) => {

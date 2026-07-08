@@ -23,6 +23,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import CachedImage from '@/components/CachedImage';
 import VisualSearchModal from '@/components/VisualSearchModal';
 import { Product } from '@/types';
+import { showAlert } from '@/utils/alert';
 
 const { width } = Dimensions.get('window');
 
@@ -257,7 +258,7 @@ export default function AdminInventoryScreen() {
   const handleUpdateStock = async (product: Product, change: number) => {
     const newQty = product.stock_quantity + change;
     if (newQty < 0) {
-      Alert.alert('Cannot Deduct', 'Stock quantity cannot be negative.');
+      showAlert('Cannot Deduct', 'Stock quantity cannot be negative.');
       return;
     }
 
@@ -285,7 +286,7 @@ export default function AdminInventoryScreen() {
       refetch();
     } catch (err: any) {
       console.error(err);
-      Alert.alert('Error', err.message || 'Failed to update stock quantity.');
+      showAlert('Error', err.message || 'Failed to update stock quantity.');
     } finally {
       setUpdatingProductId(null);
     }
