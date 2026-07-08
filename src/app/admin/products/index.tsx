@@ -16,6 +16,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { Colors } from '@/constants/theme';
 import { useProducts } from '@/hooks/useProducts';
 import { db } from '@/services/firebase';
+import { doc, deleteDoc } from 'firebase/firestore';
 import { useQueryClient } from '@tanstack/react-query';
 import CachedImage from '@/components/CachedImage';
 import { Product } from '@/types';
@@ -61,7 +62,6 @@ export default function AdminProductsListScreen() {
                 }
               }
 
-              const { doc, deleteDoc } = await import('firebase/firestore');
               const docRef = doc(db, 'products', product.id);
               await deleteDoc(docRef);
 
