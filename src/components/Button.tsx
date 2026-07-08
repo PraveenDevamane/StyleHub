@@ -67,7 +67,7 @@ export const Button: React.FC<ButtonProps> = ({
       buttonStyle = {
         backgroundColor: colors.accent,
       };
-      textColor = '#FFFFFF';
+      textColor = theme === 'dark' ? colors.background : '#FFFFFF';
       break;
     case 'outline':
       buttonStyle = {
@@ -105,7 +105,7 @@ export const Button: React.FC<ButtonProps> = ({
 const styles = StyleSheet.create({
   button: {
     height: 52,
-    borderRadius: 12,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
@@ -114,7 +114,6 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 15,
     fontWeight: '600',
-    letterSpacing: 0.3,
   },
   disabled: {
     opacity: 0.5,

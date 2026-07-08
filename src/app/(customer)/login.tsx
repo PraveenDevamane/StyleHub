@@ -22,7 +22,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useThemeStore } from '@/store/themeStore';
 import { Colors } from '@/constants/theme';
-import { ChevronLeft, Lock, Mail, User, Eye, EyeOff } from 'lucide-react-native';
+import { ChevronLeft, Eye, EyeOff, Lock, Mail } from 'lucide-react-native';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -155,7 +155,7 @@ export default function CustomerLoginScreen() {
               <View style={[styles.logoDot, { backgroundColor: colors.accent }]} />
               <Text style={[styles.logoLetter, { color: colors.text }]}>H</Text>
             </View>
-            <Text style={[styles.brandTitle, { color: colors.text }]}>STYLEHUB</Text>
+            <Text style={[styles.brandTitle, { color: colors.text }]}>StyleHub</Text>
           </View>
 
           {/* Tab Toggle */}
@@ -164,16 +164,16 @@ export default function CustomerLoginScreen() {
               style={[styles.tab, mode === 'login' && { backgroundColor: colors.accent }]}
               onPress={() => switchMode('login')}
             >
-              <Text style={[styles.tabText, { color: mode === 'login' ? '#FFF' : colors.textSecondary }]}>
-                SIGN IN
+              <Text style={[styles.tabText, { color: mode === 'login' ? colors.background : colors.textSecondary }]}>
+                Sign in
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.tab, mode === 'register' && { backgroundColor: colors.accent }]}
               onPress={() => switchMode('register')}
             >
-              <Text style={[styles.tabText, { color: mode === 'register' ? '#FFF' : colors.textSecondary }]}>
-                CREATE ACCOUNT
+              <Text style={[styles.tabText, { color: mode === 'register' ? colors.background : colors.textSecondary }]}>
+                Create account
               </Text>
             </TouchableOpacity>
           </View>
@@ -193,7 +193,7 @@ export default function CustomerLoginScreen() {
           {/* LOGIN FORM */}
           {mode === 'login' && (
             <View style={styles.form}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>EMAIL ADDRESS</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Email address</Text>
               <Controller
                 control={loginForm.control}
                 name="email"
@@ -218,7 +218,7 @@ export default function CustomerLoginScreen() {
                 <Text style={styles.fieldError}>{loginForm.formState.errors.email.message}</Text>
               )}
 
-              <Text style={[styles.label, { color: colors.textSecondary, marginTop: 18 }]}>PASSWORD</Text>
+              <Text style={[styles.label, { color: colors.textSecondary, marginTop: 18 }]}>Password</Text>
               <Controller
                 control={loginForm.control}
                 name="password"
@@ -258,7 +258,9 @@ export default function CustomerLoginScreen() {
                 onPress={loginForm.handleSubmit(onLogin)}
                 disabled={loading}
               >
-                <Text style={styles.submitBtnText}>{loading ? 'SIGNING IN...' : 'SIGN IN'}</Text>
+                <Text style={[styles.submitBtnText, { color: theme === 'dark' ? colors.background : '#FFFFFF' }]}>
+                  {loading ? 'Signing in...' : 'Sign in'}
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -266,7 +268,7 @@ export default function CustomerLoginScreen() {
           {/* REGISTER FORM */}
           {mode === 'register' && (
             <View style={styles.form}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>EMAIL ADDRESS</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Email address</Text>
               <Controller
                 control={registerForm.control}
                 name="email"
@@ -291,7 +293,7 @@ export default function CustomerLoginScreen() {
                 <Text style={styles.fieldError}>{registerForm.formState.errors.email.message}</Text>
               )}
 
-              <Text style={[styles.label, { color: colors.textSecondary, marginTop: 18 }]}>PASSWORD</Text>
+              <Text style={[styles.label, { color: colors.textSecondary, marginTop: 18 }]}>Password</Text>
               <Controller
                 control={registerForm.control}
                 name="password"
@@ -322,7 +324,7 @@ export default function CustomerLoginScreen() {
                 <Text style={styles.fieldError}>{registerForm.formState.errors.password.message}</Text>
               )}
 
-              <Text style={[styles.label, { color: colors.textSecondary, marginTop: 18 }]}>CONFIRM PASSWORD</Text>
+              <Text style={[styles.label, { color: colors.textSecondary, marginTop: 18 }]}>Confirm password</Text>
               <Controller
                 control={registerForm.control}
                 name="confirmPassword"
@@ -358,7 +360,9 @@ export default function CustomerLoginScreen() {
                 onPress={registerForm.handleSubmit(onRegister)}
                 disabled={loading}
               >
-                <Text style={styles.submitBtnText}>{loading ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT'}</Text>
+                <Text style={[styles.submitBtnText, { color: theme === 'dark' ? colors.background : '#FFFFFF' }]}>
+                  {loading ? 'Creating account...' : 'Create account'}
+                </Text>
               </TouchableOpacity>
 
               <Text style={[styles.termsText, { color: colors.textSecondary }]}>
@@ -376,15 +380,24 @@ export default function CustomerLoginScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingTop: 12 },
+  header: {
+    width: '100%',
+    maxWidth: 460,
+    alignSelf: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+  },
   backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 42,
+    height: 42,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
   scrollContent: {
+    width: '100%',
+    maxWidth: 460,
+    alignSelf: 'center',
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 40,
@@ -396,8 +409,8 @@ const styles = StyleSheet.create({
   logoOutline: {
     width: 72,
     height: 72,
-    borderWidth: 2.5,
-    borderRadius: 18,
+    borderWidth: 1,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
@@ -407,7 +420,6 @@ const styles = StyleSheet.create({
   logoLetter: {
     fontSize: 30,
     fontWeight: '900',
-    letterSpacing: -2,
   },
   logoDot: {
     width: 6,
@@ -417,13 +429,12 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   brandTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: '800',
-    letterSpacing: 5,
   },
   tabRow: {
     flexDirection: 'row',
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 1,
     overflow: 'hidden',
     marginBottom: 24,
@@ -432,12 +443,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     alignItems: 'center',
-    borderRadius: 10,
+    borderRadius: 6,
   },
   tabText: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
+    fontSize: 13,
+    fontWeight: '800',
   },
   errorBanner: {
     backgroundColor: '#FF3B30',
@@ -455,16 +465,15 @@ const styles = StyleSheet.create({
   successText: { color: '#FFF', fontSize: 13, fontWeight: '600', textAlign: 'center' },
   form: {},
   label: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.2,
+    fontSize: 13,
+    fontWeight: '800',
     marginBottom: 8,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     height: 52,
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 1,
     paddingHorizontal: 14,
   },
@@ -486,17 +495,15 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     height: 52,
-    borderRadius: 12,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 24,
   },
   submitBtnDisabled: { opacity: 0.7 },
   submitBtnText: {
-    color: '#FFF',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '800',
-    letterSpacing: 1.5,
   },
   fieldError: {
     color: '#FF3B30',

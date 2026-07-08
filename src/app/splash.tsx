@@ -48,16 +48,16 @@ export default function SplashScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Animated.View style={[styles.logoContainer, logoStyle]}>
-        <View style={[styles.logoOutline, { borderColor: colors.accent }]}>
+        <View style={[styles.logoOutline, { borderColor: colors.cardBorder, backgroundColor: colors.tint }]}>
           <Text style={[styles.logoLetter, { color: colors.text }]}>S</Text>
           <View style={[styles.logoDot, { backgroundColor: colors.accent }]} />
           <Text style={[styles.logoLetter, { color: colors.text }]}>H</Text>
         </View>
       </Animated.View>
       <Animated.View style={[styles.brandContainer, textStyle]}>
-        <Text style={[styles.brandTitle, { color: colors.text }]}>STYLEHUB</Text>
+        <Text style={[styles.brandTitle, { color: colors.text }]}>StyleHub</Text>
         <Text style={[styles.brandSubtitle, { color: colors.textSecondary }]}>
-          ELEVATE YOUR STYLE
+          Curated fashion catalog
         </Text>
       </Animated.View>
     </View>
@@ -76,8 +76,8 @@ const styles = StyleSheet.create({
   logoOutline: {
     width: 90,
     height: 90,
-    borderWidth: 3,
-    borderRadius: 20,
+    borderWidth: 1,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
@@ -87,7 +87,6 @@ const styles = StyleSheet.create({
   logoLetter: {
     fontSize: 38,
     fontWeight: '900',
-    letterSpacing: -2,
   },
   logoDot: {
     width: 8,
@@ -102,12 +101,10 @@ const styles = StyleSheet.create({
   brandTitle: {
     fontSize: 24,
     fontWeight: '800',
-    letterSpacing: 6,
     marginBottom: 6,
   },
   brandSubtitle: {
-    fontSize: 10,
-    fontWeight: '500',
-    letterSpacing: 4,
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

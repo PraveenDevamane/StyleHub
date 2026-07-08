@@ -11,7 +11,7 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
-      theme: 'dark', // Start in premium dark mode by default for luxury aesthetics
+      theme: 'light',
       toggleTheme: () => set((state) => ({ theme: state.theme === 'light' ? 'dark' : 'light' })),
       setTheme: (theme) => set({ theme }),
     }),

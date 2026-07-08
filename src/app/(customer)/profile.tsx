@@ -70,27 +70,28 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>PROFILE</Text>
+      <View style={styles.header}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Preferences, account, and store details</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Brand Logo Section with Secret Tap Trigger */}
-        <View style={styles.logoSection}>
+        <View style={[styles.logoSection, { backgroundColor: colors.backgroundElement, borderColor: colors.cardBorder }]}>
           <TouchableOpacity activeOpacity={0.8} onPress={handleLogoTap} style={styles.logoWrapper}>
-            <View style={[styles.logoOutline, { borderColor: colors.accent }]}>
+            <View style={[styles.logoOutline, { borderColor: colors.cardBorder, backgroundColor: colors.tint }]}>
               <Text style={[styles.logoLetter, { color: colors.text }]}>S</Text>
               <View style={[styles.logoDot, { backgroundColor: colors.accent }]} />
               <Text style={[styles.logoLetter, { color: colors.text }]}>H</Text>
             </View>
           </TouchableOpacity>
-          <Text style={[styles.logoText, { color: colors.text }]}>STYLEHUB</Text>
-          <Text style={[styles.logoSubtext, { color: colors.textSecondary }]}>ELEVATE YOUR STYLE</Text>
+          <Text style={[styles.logoText, { color: colors.text }]}>StyleHub</Text>
+          <Text style={[styles.logoSubtext, { color: colors.textSecondary }]}>Curated fashion catalog</Text>
         </View>
 
         {!session && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>ACCOUNT</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Account</Text>
             <TouchableOpacity
               accessibilityRole="button"
               accessibilityLabel="Sign in or create an account"
@@ -110,7 +111,7 @@ export default function ProfileScreen() {
 
         {session && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>ACCOUNT</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Account</Text>
             <View style={[styles.accountStatus, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
               <Text style={[styles.accountEmail, { color: colors.text }]} numberOfLines={1}>
                 {session.user.email || 'Signed in'}
@@ -130,7 +131,7 @@ export default function ProfileScreen() {
 
         {/* Settings Groups */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>PREFERENCES</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Preferences</Text>
           
           <View style={[styles.itemRow, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
             <View style={styles.itemLeft}>
@@ -152,7 +153,7 @@ export default function ProfileScreen() {
 
         {/* Store Information */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>ABOUT STORE</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Store information</Text>
           
           <View style={[styles.infoBlock, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
             <View style={styles.infoRow}>
@@ -217,41 +218,53 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    height: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderBottomWidth: 1,
+    width: '100%',
+    maxWidth: 900,
+    alignSelf: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 12,
   },
   headerTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: 1.5,
+    fontSize: 28,
+    lineHeight: 32,
+    fontWeight: '800',
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 4,
   },
   scrollContent: {
+    width: '100%',
+    maxWidth: 900,
+    alignSelf: 'center',
     paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingTop: 6,
   },
   logoSection: {
     alignItems: 'center',
-    marginBottom: 36,
+    marginBottom: 26,
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 22,
   },
   logoWrapper: {
-    marginBottom: 16,
+    marginBottom: 14,
   },
   logoOutline: {
-    width: 76,
-    height: 76,
-    borderWidth: 2.5,
-    borderRadius: 18,
+    width: 72,
+    height: 72,
+    borderWidth: 1,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
     paddingHorizontal: 4,
   },
   logoLetter: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: '900',
-    letterSpacing: -2,
   },
   logoDot: {
     width: 6,
@@ -261,23 +274,20 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   logoText: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '800',
-    letterSpacing: 4,
     marginBottom: 4,
   },
   logoSubtext: {
-    fontSize: 9,
+    fontSize: 13,
     fontWeight: '600',
-    letterSpacing: 3,
   },
   section: {
-    marginBottom: 28,
+    marginBottom: 22,
   },
   sectionTitle: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.5,
+    fontSize: 16,
+    fontWeight: '800',
     marginBottom: 10,
   },
   itemRow: {
@@ -286,7 +296,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 1,
   },
   itemLeft: {
@@ -302,7 +312,7 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   accountStatus: {
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -320,7 +330,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   infoBlock: {
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 1,
     padding: 16,
     gap: 16,

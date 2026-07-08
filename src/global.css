@@ -5,5 +5,10 @@
   --font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
   --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
-  --font-serif: Georgia, 'Times New Roman', serif;
+  --font-serif: Didot, 'Bodoni 72', Georgia, 'Times New Roman', serif;
+}
+
+[role='tab']:focus-visible {
+  outline: 2px solid rgba(249, 115, 22, 0.45);
+  outline-offset: -4px;
 }

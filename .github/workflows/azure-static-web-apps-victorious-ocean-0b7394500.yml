@@ -10,7 +10,30 @@ on:
       - main
 
 jobs:
+  verify_network:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    name: Verify Network Services
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Install Newman
+        run: npm install -g newman
+      - name: Run Integration Tests
+        run: |
+          newman run tests/newman_collection.json \
+            --env-var "EXPO_PUBLIC_FIREBASE_API_KEY=${{ secrets.EXPO_PUBLIC_FIREBASE_API_KEY }}" \
+            --env-var "EXPO_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.EXPO_PUBLIC_FIREBASE_PROJECT_ID }}" \
+            --env-var "EXPO_PUBLIC_GOOGLE_DRIVE_UPLOAD_URL=${{ secrets.EXPO_PUBLIC_GOOGLE_DRIVE_UPLOAD_URL }}" \
+            --env-var "EXPO_PUBLIC_GOOGLE_DRIVE_FOLDER_ID=${{ secrets.EXPO_PUBLIC_GOOGLE_DRIVE_FOLDER_ID }}" \
+            --env-var "TEST_ADMIN_EMAIL=${{ secrets.TEST_ADMIN_EMAIL }}" \
+            --env-var "TEST_ADMIN_PASSWORD=${{ secrets.TEST_ADMIN_PASSWORD }}"
+
   build_and_deploy_job:
+    needs: verify_network
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job

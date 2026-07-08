@@ -10,6 +10,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { Colors } from '@/constants/theme';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import '@/global.css';
 import '@/services/appInsights';
 
 const queryClient = new QueryClient();

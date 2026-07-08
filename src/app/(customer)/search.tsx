@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  FlatList,
+  ScrollView,
   StyleSheet,
   Text,
-  View,
   TextInput,
   TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-  ScrollView,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Search, X, Clock, Heart, Camera } from 'lucide-react-native';
+import { ArrowLeft, Camera, Clock, Heart, Search, X } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useThemeStore } from '@/store/themeStore';
 import { Colors } from '@/constants/theme';
@@ -23,6 +23,12 @@ import { Product } from '@/types';
 
 const RECENT_SEARCHES_KEY = 'stylehub-recent-searches';
 const POPULAR_TAGS = ['Sneakers', 'Hoodies', 'Jeans', 'T-Shirts', 'Jackets'];
+const MAX_CONTENT_WIDTH = 900;
+const FALLBACK_PRODUCT_IMAGE = 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=400';
+
+function formatPrice(value: number) {
+  return `$${value}`;
+}
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -36,7 +42,6 @@ export default function SearchScreen() {
 
   const { addFavorite, removeFavorite, isFavorite } = useFavoritesStore();
 
-  // Debounce the text input
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(inputVal.trim());
@@ -44,27 +49,29 @@ export default function SearchScreen() {
     return () => clearTimeout(timer);
   }, [inputVal]);
 
-  const loadRecentSearches = async () => {
-    try {
-      const stored = await AsyncStorage.getItem(RECENT_SEARCHES_KEY);
-      if (stored) {
-        setRecentSearches(JSON.parse(stored));
-      }
-    } catch (e) {
-      console.error('Failed to load recent searches:', e);
-    }
-  };
-
-  // Load recent searches from AsyncStorage
   useEffect(() => {
-    loadRecentSearches();
+    let isMounted = true;
+
+    AsyncStorage.getItem(RECENT_SEARCHES_KEY)
+      .then((stored) => {
+        if (stored && isMounted) {
+          setRecentSearches(JSON.parse(stored));
+        }
+      })
+      .catch((e) => {
+        console.error('Failed to load recent searches:', e);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const saveRecentSearch = async (query: string) => {
     if (!query) return;
     try {
       const filtered = recentSearches.filter((item) => item.toLowerCase() !== query.toLowerCase());
-      const updated = [query, ...filtered].slice(0, 5); // Keep top 5
+      const updated = [query, ...filtered].slice(0, 5);
       setRecentSearches(updated);
       await AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
     } catch (e) {
@@ -81,7 +88,6 @@ export default function SearchScreen() {
     }
   };
 
-  // Fetch products matching the query
   const { data: products, isLoading } = useProducts({
     searchQuery: debouncedQuery || undefined,
   });
@@ -102,30 +108,41 @@ export default function SearchScreen() {
     }
   };
 
+  const applySearch = (query: string) => {
+    setInputVal(query);
+    setDebouncedQuery(query);
+    saveRecentSearch(query);
+  };
+
   const renderProductItem = ({ item }: { item: Product }) => {
     const isFav = isFavorite(item.id);
-    const mainImage = item.product_images?.[0]?.image_url || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=400';
+    const mainImage = item.product_images?.[0]?.image_url || FALLBACK_PRODUCT_IMAGE;
 
     return (
       <TouchableOpacity
-        style={[styles.resultCard, { borderBottomColor: colors.border }]}
+        style={[styles.resultCard, { backgroundColor: colors.backgroundElement, borderColor: colors.cardBorder }]}
         onPress={() => router.push(`/(customer)/product/${item.id}`)}
+        activeOpacity={0.88}
       >
-        <CachedImage source={{ uri: mainImage }} style={styles.productImage} />
+        <CachedImage source={{ uri: mainImage }} style={[styles.productImage, { backgroundColor: colors.backgroundSelected }]} />
         <View style={styles.infoContainer}>
           <Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>
             {item.name}
           </Text>
-          <Text style={[styles.productSub, { color: colors.textSecondary }]}>
+          <Text style={[styles.productSub, { color: colors.textSecondary }]} numberOfLines={1}>
             {item.subcategory}
           </Text>
-          <Text style={[styles.price, { color: colors.accent }]}>${item.price}</Text>
+          <Text style={[styles.price, { color: item.discounted_price ? colors.highlight : colors.text }]}>
+            {formatPrice(item.discounted_price || item.price)}
+          </Text>
         </View>
         <TouchableOpacity
-          style={[styles.favBtn, { backgroundColor: colors.backgroundSelected }]}
+          accessibilityRole="button"
+          accessibilityLabel={isFav ? 'Remove from saved items' : 'Save item'}
+          style={[styles.favBtn, { backgroundColor: colors.tint }]}
           onPress={() => toggleWishlist(item)}
         >
-          <Heart size={14} color={isFav ? colors.accent : colors.text} fill={isFav ? colors.accent : 'transparent'} />
+          <Heart size={15} color={isFav ? colors.highlight : colors.text} fill={isFav ? colors.highlight : 'transparent'} />
         </TouchableOpacity>
       </TouchableOpacity>
     );
@@ -133,85 +150,93 @@ export default function SearchScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Search Input Bar */}
-      <View style={[styles.searchBar, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={20} color={colors.text} />
-        </TouchableOpacity>
-        <View style={[styles.inputWrapper, { backgroundColor: colors.backgroundSelected }]}>
-          <Search size={16} color={colors.textSecondary} style={{ marginRight: 8 }} />
-          <TextInput
-            style={[styles.input, { color: colors.text }]}
-            placeholder="Search catalog..."
-            placeholderTextColor={colors.textSecondary}
-            value={inputVal}
-            onChangeText={setInputVal}
-            onSubmitEditing={handleSearchSubmit}
-            autoFocus
-            returnKeyType="search"
-          />
-          {inputVal.length > 0 ? (
-            <TouchableOpacity onPress={() => setInputVal('')} style={styles.clearBtn}>
-              <X size={14} color={colors.text} />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity onPress={() => setIsVisualSearchVisible(true)} style={styles.clearBtn}>
-              <Camera size={16} color={colors.textSecondary} />
-            </TouchableOpacity>
-          )}
+      <View style={styles.contentShell}>
+        <View style={styles.searchHeader}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            onPress={() => router.back()}
+            style={[styles.backButton, { borderColor: colors.cardBorder, backgroundColor: colors.backgroundElement }]}
+          >
+            <ArrowLeft size={20} color={colors.text} />
+          </TouchableOpacity>
+          <View style={[styles.inputWrapper, { backgroundColor: colors.backgroundElement, borderColor: colors.cardBorder }]}>
+            <Search size={18} color={colors.textSecondary} />
+            <TextInput
+              style={[styles.input, { color: colors.text }]}
+              placeholder="Search catalog..."
+              placeholderTextColor={colors.textSecondary}
+              value={inputVal}
+              onChangeText={setInputVal}
+              onSubmitEditing={handleSearchSubmit}
+              autoFocus
+              returnKeyType="search"
+            />
+            {inputVal.length > 0 ? (
+              <TouchableOpacity onPress={() => setInputVal('')} style={styles.iconButton}>
+                <X size={16} color={colors.text} />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity onPress={() => setIsVisualSearchVisible(true)} style={styles.iconButton}>
+                <Camera size={17} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </View>
 
-      {/* Main Content */}
       {debouncedQuery.length === 0 ? (
-        <ScrollView style={styles.suggestionsContainer}>
-          {/* Recent Searches */}
-          {recentSearches.length > 0 && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>RECENT SEARCHES</Text>
-                <TouchableOpacity onPress={clearRecentSearches}>
-                  <Text style={[styles.clearLink, { color: colors.accent }]}>Clear All</Text>
-                </TouchableOpacity>
-              </View>
-              {recentSearches.map((search, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  style={[styles.recentItem, { borderBottomColor: colors.border }]}
-                  onPress={() => {
-                    setInputVal(search);
-                    setDebouncedQuery(search);
-                  }}
-                >
-                  <Clock size={14} color={colors.textSecondary} style={{ marginRight: 10 }} />
-                  <Text style={[styles.recentText, { color: colors.text }]}>{search}</Text>
-                </TouchableOpacity>
-              ))}
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.suggestionsScroll}>
+          <View style={styles.contentShell}>
+            <View style={[styles.searchIntro, { backgroundColor: colors.tint, borderColor: colors.cardBorder }]}>
+              <Text style={[styles.searchIntroTitle, { color: colors.text }]}>Find a product quickly</Text>
+              <Text style={[styles.searchIntroText, { color: colors.textSecondary }]}>
+                Search by product name, product code, or a style you have in mind.
+              </Text>
             </View>
-          )}
 
-          {/* Popular Tag suggestions */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 14 }]}>POPULAR SEARCHES</Text>
-            <View style={styles.tagsContainer}>
-              {POPULAR_TAGS.map((tag) => (
-                <TouchableOpacity
-                  key={tag}
-                  style={[styles.tagChip, { backgroundColor: colors.backgroundSelected }]}
-                  onPress={() => {
-                    setInputVal(tag);
-                    setDebouncedQuery(tag);
-                    saveRecentSearch(tag);
-                  }}
-                >
-                  <Text style={[styles.tagText, { color: colors.text }]}>{tag}</Text>
-                </TouchableOpacity>
-              ))}
+            {recentSearches.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent searches</Text>
+                  <TouchableOpacity onPress={clearRecentSearches}>
+                    <Text style={[styles.clearLink, { color: colors.accent }]}>Clear</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={[styles.listBlock, { backgroundColor: colors.backgroundElement, borderColor: colors.cardBorder }]}>
+                  {recentSearches.map((search, idx) => (
+                    <TouchableOpacity
+                      key={search}
+                      style={[styles.recentItem, idx > 0 && { borderTopColor: colors.border, borderTopWidth: 1 }]}
+                      onPress={() => applySearch(search)}
+                    >
+                      <Clock size={15} color={colors.textSecondary} />
+                      <Text style={[styles.recentText, { color: colors.text }]}>{search}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 12 }]}>Popular searches</Text>
+              <View style={styles.tagsContainer}>
+                {POPULAR_TAGS.map((tag) => (
+                  <TouchableOpacity
+                    key={tag}
+                    style={[styles.tagChip, { backgroundColor: colors.backgroundElement, borderColor: colors.cardBorder }]}
+                    onPress={() => applySearch(tag)}
+                    activeOpacity={0.86}
+                  >
+                    <Text style={[styles.tagText, { color: colors.text }]}>{tag}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
           </View>
         </ScrollView>
       ) : (
-        <View style={{ flex: 1 }}>
+        <View style={styles.resultsWrap}>
           {isLoading ? (
             <View style={styles.center}>
               <ActivityIndicator size="small" color={colors.accent} />
@@ -220,15 +245,24 @@ export default function SearchScreen() {
             <FlatList
               data={products}
               keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.listPadding}
+              contentContainerStyle={[styles.listPadding, { maxWidth: MAX_CONTENT_WIDTH }]}
               renderItem={renderProductItem}
               keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              ListHeaderComponent={
+                <Text style={[styles.resultCount, { color: colors.textSecondary }]}>
+                  Results for {debouncedQuery}: {products.length}
+                </Text>
+              }
             />
           ) : (
             <View style={styles.center}>
-              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                No products found matching &quot;{debouncedQuery}&quot;
-              </Text>
+              <View style={[styles.emptyCard, { backgroundColor: colors.backgroundElement, borderColor: colors.cardBorder }]}>
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>No matching products</Text>
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                  Try a shorter term or browse categories instead.
+                </Text>
+              </View>
             </View>
           )}
         </View>
@@ -246,41 +280,68 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  searchBar: {
+  contentShell: {
+    width: '100%',
+    maxWidth: MAX_CONTENT_WIDTH,
+    alignSelf: 'center',
+    paddingHorizontal: 20,
+  },
+  searchHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
+    gap: 10,
+    paddingTop: 12,
+    paddingBottom: 14,
   },
   backButton: {
-    marginRight: 12,
-    paddingVertical: 4,
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   inputWrapper: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    height: 40,
-    borderRadius: 10,
-    paddingHorizontal: 12,
+    minHeight: 48,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 13,
+    gap: 10,
   },
   input: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     padding: 0,
   },
-  clearBtn: {
-    padding: 4,
+  iconButton: {
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  suggestionsContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 16,
+  suggestionsScroll: {
+    paddingBottom: 104,
+  },
+  searchIntro: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 18,
+    marginBottom: 24,
+  },
+  searchIntroTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  searchIntroText: {
+    fontSize: 14,
+    lineHeight: 21,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 26,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -289,76 +350,94 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.2,
+    fontSize: 16,
+    fontWeight: '800',
   },
   clearLink: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  listBlock: {
+    borderWidth: 1,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   recentItem: {
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
+    gap: 10,
+    paddingHorizontal: 14,
   },
   recentText: {
     fontSize: 14,
+    fontWeight: '600',
   },
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 9,
   },
   tagChip: {
+    borderWidth: 1,
+    borderRadius: 999,
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 16,
+    paddingVertical: 9,
   },
   tagText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  resultsWrap: {
+    flex: 1,
   },
   listPadding: {
+    width: '100%',
+    alignSelf: 'center',
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 40,
+    paddingTop: 8,
+    paddingBottom: 104,
+    gap: 10,
+  },
+  resultCount: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 4,
   },
   resultCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 8,
   },
   productImage: {
-    width: 60,
-    height: 75,
+    width: 68,
+    height: 84,
     borderRadius: 8,
-    backgroundColor: '#F5F5F5',
   },
   infoContainer: {
     flex: 1,
-    marginLeft: 14,
+    marginLeft: 13,
     justifyContent: 'center',
   },
   productName: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 2,
+    fontSize: 15,
+    fontWeight: '800',
+    marginBottom: 3,
   },
   productSub: {
-    fontSize: 11,
-    marginBottom: 4,
+    fontSize: 12,
+    marginBottom: 7,
   },
   price: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '800',
   },
   favBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -366,10 +445,24 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40,
+    padding: 24,
+  },
+  emptyCard: {
+    width: '100%',
+    maxWidth: 360,
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 22,
+    alignItems: 'center',
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 6,
   },
   emptyText: {
     fontSize: 14,
     textAlign: 'center',
+    lineHeight: 20,
   },
 });

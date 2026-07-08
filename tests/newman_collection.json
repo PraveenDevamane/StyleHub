@@ -1,0 +1,244 @@
+{
+  "info": {
+    "name": "StyleHub Network Services Verification",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Firebase Auth Sign In",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{TEST_ADMIN_EMAIL}}\",\n  \"password\": \"{{TEST_ADMIN_PASSWORD}}\",\n  \"returnSecureToken\": true\n}"
+        },
+        "url": {
+          "raw": "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={{EXPO_PUBLIC_FIREBASE_API_KEY}}",
+          "protocol": "https",
+          "host": [
+            "identitytoolkit",
+            "googleapis",
+            "com"
+          ],
+          "path": [
+            "v1",
+            "accounts:signInWithPassword"
+          ],
+          "query": [
+            {
+              "key": "key",
+              "value": "{{EXPO_PUBLIC_FIREBASE_API_KEY}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response = pm.response.json();",
+              "pm.test(\"Auth should be successful\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    pm.expect(response.idToken).to.not.be.undefined;",
+              "});",
+              "pm.collectionVariables.set(\"FIREBASE_ID_TOKEN\", response.idToken);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Firestore Document",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{FIREBASE_ID_TOKEN}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fields\": {\n    \"name\": { \"stringValue\": \"Newman Test Product\" },\n    \"price\": { \"doubleValue\": 99.99 },\n    \"stock_quantity\": { \"integerValue\": \"10\" },\n    \"subcategory\": { \"stringValue\": \"Test Subcategory\" },\n    \"created_at\": { \"stringValue\": \"2026-07-08T00:00:00.000Z\" }\n  }\n}"
+        },
+        "url": {
+          "raw": "https://firestore.googleapis.com/v1/projects/{{EXPO_PUBLIC_FIREBASE_PROJECT_ID}}/databases/(default)/documents/products?documentId=test_product_newman",
+          "protocol": "https",
+          "host": [
+            "firestore",
+            "googleapis",
+            "com"
+          ],
+          "path": [
+            "v1",
+            "projects",
+            "{{EXPO_PUBLIC_FIREBASE_PROJECT_ID}}",
+            "databases",
+            "(default)",
+            "documents",
+            "products"
+          ],
+          "query": [
+            {
+              "key": "documentId",
+              "value": "test_product_newman"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Firestore document created\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Upload Image to Google Drive",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "text/plain"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"base64\": \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=\",\n  \"filename\": \"newman_test_image.png\",\n  \"mimeType\": \"image/png\",\n  \"folderId\": \"{{EXPO_PUBLIC_GOOGLE_DRIVE_FOLDER_ID}}\"\n}"
+        },
+        "url": {
+          "raw": "{{EXPO_PUBLIC_GOOGLE_DRIVE_UPLOAD_URL}}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response = pm.response.json();",
+              "pm.test(\"Google Drive upload successful\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    pm.expect(response.success).to.be.true;",
+              "    pm.expect(response.url).to.not.be.undefined;",
+              "});",
+              "const url = response.url;",
+              "const regExp = /id=([^&]+)|d\\/([^/]+)/;",
+              "const matches = url.match(regExp);",
+              "const fileId = matches ? (matches[1] || matches[2]) : null;",
+              "pm.collectionVariables.set(\"DRIVE_FILE_ID\", fileId);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Image from Google Drive",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "text/plain"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"action\": \"delete\",\n  \"fileId\": \"{{DRIVE_FILE_ID}}\"\n}"
+        },
+        "url": {
+          "raw": "{{EXPO_PUBLIC_GOOGLE_DRIVE_UPLOAD_URL}}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response = pm.response.json();",
+              "pm.test(\"Google Drive delete successful\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    pm.expect(response.success).to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Firestore Document",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{FIREBASE_ID_TOKEN}}"
+          }
+        ],
+        "url": {
+          "raw": "https://firestore.googleapis.com/v1/projects/{{EXPO_PUBLIC_FIREBASE_PROJECT_ID}}/databases/(default)/documents/products/test_product_newman",
+          "protocol": "https",
+          "host": [
+            "firestore",
+            "googleapis",
+            "com"
+          ],
+          "path": [
+            "v1",
+            "projects",
+            "{{EXPO_PUBLIC_FIREBASE_PROJECT_ID}}",
+            "databases",
+            "(default)",
+            "documents",
+            "products",
+            "test_product_newman"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Firestore document deleted\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "FIREBASE_ID_TOKEN",
+      "value": ""
+    },
+    {
+      "key": "DRIVE_FILE_ID",
+      "value": ""
+    }
+  ]
+}
