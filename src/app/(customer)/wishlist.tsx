@@ -64,6 +64,11 @@ export default function WishlistScreen() {
         <Text style={[styles.productSub, { color: colors.textSecondary }]} numberOfLines={1}>
           {item.subcategory}
         </Text>
+        {item.product_code ? (
+          <Text style={[styles.productCode, { color: colors.accent }]} numberOfLines={1}>
+            Code: {item.product_code}
+          </Text>
+        ) : null}
         <View style={styles.priceContainer}>
           {item.discounted_price ? (
             <>
@@ -214,6 +219,11 @@ const styles = StyleSheet.create({
   },
   productSub: {
     fontSize: 12,
+    marginBottom: 4,
+  },
+  productCode: {
+    fontSize: 11,
+    fontWeight: '800',
     marginBottom: 7,
   },
   priceContainer: {

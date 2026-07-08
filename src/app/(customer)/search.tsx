@@ -89,6 +89,8 @@ export default function SearchScreen() {
 
   const { data: products, isLoading } = useProducts({
     searchQuery: debouncedQuery || undefined,
+  }, {
+    enabled: !!debouncedQuery.trim(),
   });
 
   const handleSearchSubmit = () => {
@@ -131,6 +133,11 @@ export default function SearchScreen() {
           <Text style={[styles.productSub, { color: colors.textSecondary }]} numberOfLines={1}>
             {item.subcategory}
           </Text>
+          {item.product_code ? (
+            <Text style={[styles.productCode, { color: colors.accent }]} numberOfLines={1}>
+              Code: {item.product_code}
+            </Text>
+          ) : null}
           <Text style={[styles.price, { color: item.discounted_price ? colors.highlight : colors.text }]}>
             {formatPrice(item.discounted_price || item.price)}
           </Text>
@@ -163,7 +170,7 @@ export default function SearchScreen() {
             <Search size={18} color={colors.textSecondary} />
             <TextInput
               style={[styles.input, { color: colors.text }]}
-              placeholder="Search catalog..."
+              placeholder="Search name or code..."
               placeholderTextColor={colors.textSecondary}
               value={inputVal}
               onChangeText={setInputVal}
@@ -186,7 +193,7 @@ export default function SearchScreen() {
             <View style={[styles.searchIntro, { backgroundColor: colors.tint, borderColor: colors.cardBorder }]}>
               <Text style={[styles.searchIntroTitle, { color: colors.text }]}>Find a product quickly</Text>
               <Text style={[styles.searchIntroText, { color: colors.textSecondary }]}>
-                Search by product name, product code, or a style you have in mind.
+                Search by product name, code like SH-73979, or a style you have in mind.
               </Text>
             </View>
 
@@ -418,6 +425,11 @@ const styles = StyleSheet.create({
   },
   productSub: {
     fontSize: 12,
+    marginBottom: 4,
+  },
+  productCode: {
+    fontSize: 11,
+    fontWeight: '800',
     marginBottom: 7,
   },
   price: {

@@ -47,6 +47,12 @@ function formatPrice(value: number) {
   return `$${value}`;
 }
 
+interface CategorySelectionState {
+  categoryId: string | null;
+  subcategory: string | null;
+  routeCategoryId: string | null;
+}
+
 export default function CategoriesScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -55,28 +61,21 @@ export default function CategoriesScreen() {
   const colors = Colors[theme];
 
   const { data: categories, isLoading: catLoading } = useCategories();
+  const requestedCategoryId = typeof params.categoryId === 'string' ? params.categoryId : null;
 
-  const [selectedCatId, setSelectedCatId] = useState<string | null>(null);
-  const [selectedSub, setSelectedSub] = useState<string | null>(null);
+  const [selection, setSelection] = useState<CategorySelectionState>({
+    categoryId: null,
+    subcategory: null,
+    routeCategoryId: requestedCategoryId,
+  });
   const [sortBy, setSortBy] = useState<'newest' | 'price_asc' | 'price_desc'>('newest');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
 
   const { addFavorite, removeFavorite, isFavorite } = useFavoritesStore();
 
-  const requestedCategoryId = typeof params.categoryId === 'string' ? params.categoryId : null;
-  const [prevRequestedId, setPrevRequestedId] = useState<string | null>(null);
-
-  if (requestedCategoryId !== prevRequestedId) {
-    setPrevRequestedId(requestedCategoryId);
-    setSelectedCatId(requestedCategoryId);
-    setSelectedSub(null);
-  }
-
-  // Set default category if not selected yet and categories loaded
-  if (categories && categories.length > 0 && !selectedCatId) {
-    setSelectedCatId(categories[0].id);
-  }
-
+  const routeSelectionChanged = selection.routeCategoryId !== requestedCategoryId;
+  const selectedCatId = routeSelectionChanged ? null : selection.categoryId;
+  const activeSub = routeSelectionChanged ? null : selection.subcategory;
   const activeCatId = selectedCatId ?? requestedCategoryId ?? categories?.[0]?.id ?? null;
   const activeCategoryName = categories?.find((c) => c.id === activeCatId)?.name.toLowerCase() || 'clothing';
   const activeCategoryLabel = categories?.find((c) => c.id === activeCatId)?.name || 'Catalog';
@@ -84,8 +83,10 @@ export default function CategoriesScreen() {
 
   const { data: products, isLoading: prodLoading } = useProducts({
     categoryId: activeCatId || undefined,
-    subcategory: selectedSub || undefined,
+    subcategory: activeSub || undefined,
     sortBy,
+  }, {
+    enabled: !!activeCatId,
   });
 
   const shellWidth = Math.max(320, Math.min(width, MAX_CONTENT_WIDTH));
@@ -101,8 +102,19 @@ export default function CategoriesScreen() {
   };
 
   const handleCategorySelect = (id: string) => {
-    setSelectedCatId(id);
-    setSelectedSub(null);
+    setSelection({
+      categoryId: id,
+      subcategory: null,
+      routeCategoryId: requestedCategoryId,
+    });
+  };
+
+  const handleSubcategorySelect = (subcategory: string | null) => {
+    setSelection({
+      categoryId: activeCatId,
+      subcategory,
+      routeCategoryId: requestedCategoryId,
+    });
   };
 
   const renderProductItem = ({ item }: { item: Product }) => {
@@ -139,6 +151,11 @@ export default function CategoriesScreen() {
         <Text style={[styles.productSub, { color: colors.textSecondary }]} numberOfLines={1}>
           {item.subcategory}
         </Text>
+        {item.product_code ? (
+          <Text style={[styles.productCode, { color: colors.accent }]} numberOfLines={1}>
+            Code: {item.product_code}
+          </Text>
+        ) : null}
         <View style={styles.priceContainer}>
           {item.discounted_price ? (
             <>
@@ -203,23 +220,23 @@ export default function CategoriesScreen() {
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.subcategoryTabs}>
             <TouchableOpacity
-              onPress={() => setSelectedSub(null)}
+              onPress={() => handleSubcategorySelect(null)}
               style={[
                 styles.chip,
                 {
-                  backgroundColor: !selectedSub ? colors.accent : colors.backgroundElement,
-                  borderColor: !selectedSub ? colors.accent : colors.cardBorder,
+                  backgroundColor: !activeSub ? colors.accent : colors.backgroundElement,
+                  borderColor: !activeSub ? colors.accent : colors.cardBorder,
                 },
               ]}
             >
-              <Text style={[styles.chipText, { color: !selectedSub ? colors.background : colors.text }]}>All</Text>
+              <Text style={[styles.chipText, { color: !activeSub ? colors.background : colors.text }]}>All</Text>
             </TouchableOpacity>
             {subcategoriesList.map((sub) => {
-              const isActive = selectedSub === sub;
+              const isActive = activeSub === sub;
               return (
                 <TouchableOpacity
                   key={sub}
-                  onPress={() => setSelectedSub(isActive ? null : sub)}
+                  onPress={() => handleSubcategorySelect(isActive ? null : sub)}
                   style={[
                     styles.chip,
                     {
@@ -239,7 +256,7 @@ export default function CategoriesScreen() {
             <View style={styles.toolItem}>
               <Filter size={16} color={colors.textSecondary} />
               <Text style={[styles.toolText, { color: colors.textSecondary }]}>
-                {selectedSub || 'All styles'}
+                {activeSub || 'All styles'}
               </Text>
             </View>
             <TouchableOpacity style={styles.sortButton} onPress={() => setShowSortDropdown((value) => !value)} activeOpacity={0.86}>
@@ -472,6 +489,11 @@ const styles = StyleSheet.create({
   },
   productSub: {
     fontSize: 12,
+    marginBottom: 4,
+  },
+  productCode: {
+    fontSize: 11,
+    fontWeight: '800',
     marginBottom: 7,
   },
   priceContainer: {

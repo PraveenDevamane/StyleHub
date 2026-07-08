@@ -69,16 +69,71 @@ interface ProductFilters {
   limit?: number;
 }
 
+function normalizeSearchTerm(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function applyProductFilters(products: Product[], filters: ProductFilters) {
+  let productsList = [...products];
+
+  if (filters.categoryId) {
+    productsList = productsList.filter((p) => p.category_id === filters.categoryId);
+  }
+  if (filters.subcategory) {
+    productsList = productsList.filter((p) => p.subcategory === filters.subcategory);
+  }
+  if (filters.featured !== undefined) {
+    productsList = productsList.filter((p) => p.featured === filters.featured);
+  }
+  if (filters.searchQuery) {
+    const term = filters.searchQuery.trim().toLowerCase();
+    const compactTerm = normalizeSearchTerm(filters.searchQuery);
+
+    productsList = productsList.filter((p) => {
+      const searchableValues = [
+        p.name,
+        p.product_code,
+        p.subcategory,
+        p.categories?.name,
+        ...(p.tags || []),
+      ].filter(Boolean) as string[];
+
+      const searchableText = searchableValues.join(' ').toLowerCase();
+      const searchableCompact = normalizeSearchTerm(searchableValues.join(' '));
+
+      return searchableText.includes(term) || searchableCompact.includes(compactTerm);
+    });
+  }
+
+  if (filters.sortBy === 'price_asc') {
+    productsList.sort((a, b) => a.price - b.price);
+  } else if (filters.sortBy === 'price_desc') {
+    productsList.sort((a, b) => b.price - a.price);
+  } else {
+    productsList.sort((a, b) => {
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return dateB - dateA;
+    });
+  }
+
+  if (filters.limit) {
+    productsList = productsList.slice(0, filters.limit);
+  }
+
+  return productsList;
+}
+
 // Fetch products based on filters
-export function useProducts(filters: ProductFilters = {}) {
+export function useProducts(filters: ProductFilters = {}, options: { enabled?: boolean } = {}) {
   return useQuery<Product[]>({
-    queryKey: ['products', filters],
+    queryKey: ['products'],
     queryFn: async () => {
       const categoriesMap = await getCategoriesMap();
       let q = query(collection(db, 'products'));
 
       const snap = await getDocs(q);
-      let productsList = snap.docs.map((doc) => {
+      return snap.docs.map((doc) => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -91,45 +146,9 @@ export function useProducts(filters: ProductFilters = {}) {
           })),
         } as any;
       });
-
-      // Apply client-side filters to avoid missing index errors
-      if (filters.categoryId) {
-        productsList = productsList.filter((p) => p.category_id === filters.categoryId);
-      }
-      if (filters.subcategory) {
-        productsList = productsList.filter((p) => p.subcategory === filters.subcategory);
-      }
-      if (filters.featured !== undefined) {
-        productsList = productsList.filter((p) => p.featured === filters.featured);
-      }
-      if (filters.searchQuery) {
-        const term = filters.searchQuery.toLowerCase();
-        productsList = productsList.filter((p) => 
-          p.name.toLowerCase().includes(term) ||
-          p.product_code?.toLowerCase().includes(term)
-        );
-      }
-
-      // Sort
-      if (filters.sortBy === 'price_asc') {
-        productsList.sort((a, b) => a.price - b.price);
-      } else if (filters.sortBy === 'price_desc') {
-        productsList.sort((a, b) => b.price - a.price);
-      } else {
-        // newest
-        productsList.sort((a, b) => {
-          const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
-          const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
-          return dateB - dateA;
-        });
-      }
-
-      if (filters.limit) {
-        productsList = productsList.slice(0, filters.limit);
-      }
-
-      return productsList;
     },
+    select: (products) => applyProductFilters(products, filters),
+    ...options,
   });
 }
 

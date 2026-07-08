@@ -204,9 +204,6 @@ export default function ProductDetailScreen() {
                     Code: {product.product_code}
                   </Text>
                 ) : null}
-                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                  ID: <Text style={{ fontWeight: '700', color: colors.textSecondary, userSelect: 'text' } as any}>{product.id}</Text>
-                </Text>
               </View>
 
               <View style={styles.priceRow}>
@@ -333,6 +330,11 @@ export default function ProductDetailScreen() {
                     <Text style={[styles.similarName, { color: colors.text }]} numberOfLines={1}>
                       {item.name}
                     </Text>
+                    {item.product_code ? (
+                      <Text style={[styles.similarCode, { color: colors.accent }]} numberOfLines={1}>
+                        Code: {item.product_code}
+                      </Text>
+                    ) : null}
                     <Text style={[styles.similarPrice, { color: colors.textSecondary }]}>
                       {formatPrice(item.discounted_price || item.price)}
                     </Text>
@@ -572,6 +574,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
     marginBottom: 3,
+  },
+  similarCode: {
+    fontSize: 11,
+    fontWeight: '800',
+    marginBottom: 4,
   },
   similarPrice: {
     fontSize: 12,

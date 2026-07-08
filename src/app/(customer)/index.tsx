@@ -167,6 +167,11 @@ function AnimatedProductCard({
         <Text style={[styles.productSub, { color: colors.textSecondary }]} numberOfLines={1}>
           {item.subcategory}
         </Text>
+        {item.product_code ? (
+          <Text style={[styles.productCode, { color: colors.accent }]} numberOfLines={1}>
+            Code: {item.product_code}
+          </Text>
+        ) : null}
         <View style={styles.priceContainer}>
           {item.discounted_price ? (
             <>
@@ -593,7 +598,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   bannerOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(36, 22, 15, 0.46)',
   },
   bannerContent: {
@@ -716,7 +721,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   categoryOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(36, 22, 15, 0.28)',
   },
   categorySkeleton: {
@@ -804,6 +809,11 @@ const styles = StyleSheet.create({
   },
   productSub: {
     fontSize: 12,
+    marginBottom: 4,
+  },
+  productCode: {
+    fontSize: 11,
+    fontWeight: '800',
     marginBottom: 7,
   },
   priceContainer: {

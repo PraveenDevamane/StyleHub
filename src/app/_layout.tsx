@@ -13,10 +13,21 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '@/global.css';
 import '@/services/appInsights';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes cache freshness
+      gcTime: 1000 * 60 * 30, // 30 minutes garbage collection
+      refetchOnWindowFocus: false, // Turn off automatic refetching on window focus
+      refetchOnMount: false, // Turn off automatic refetching on mount
+      retry: 1, // Only retry failed requests once
+    },
+  },
+});
 
 export default function RootLayout() {
   const theme = useThemeStore((state) => state.theme);
+  const themeHydrated = useThemeStore((state) => state.hasHydrated);
   const colors = Colors[theme];
   const setSession = useAuthStore((state) => state.setSession);
   const [appReady, setAppReady] = useState(false);
@@ -52,7 +63,7 @@ export default function RootLayout() {
     };
   }, [setSession]);
 
-  if (!appReady) {
+  if (!themeHydrated || !appReady) {
     return (
       <View style={[styles.loading, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.accent} />
