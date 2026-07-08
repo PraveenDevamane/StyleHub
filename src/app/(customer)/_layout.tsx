@@ -2,12 +2,14 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { useThemeStore } from '@/store/themeStore';
 import { Colors } from '@/constants/theme';
-import { Platform } from 'react-native';
+import { Platform, useWindowDimensions, Pressable } from 'react-native';
 import { Heart, Home, Search, User } from 'lucide-react-native';
 
 export default function CustomerLayout() {
   const theme = useThemeStore((state) => state.theme);
   const colors = Colors[theme];
+  const { width } = useWindowDimensions();
+  const showLabel = width >= 640;
 
   return (
     <Tabs
@@ -15,8 +17,20 @@ export default function CustomerLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarShowLabel: true,
+        tabBarShowLabel: showLabel,
         tabBarActiveBackgroundColor: theme === 'dark' ? 'rgba(251, 146, 60, 0.16)' : 'rgba(255, 107, 0, 0.14)',
+        tabBarButton: (props) => (
+          <Pressable
+            {...props}
+            style={[
+              props.style,
+              {
+                borderRadius: 12,
+                overflow: 'hidden',
+              }
+            ]}
+          />
+        ),
         safeAreaInsets: { bottom: 0, top: 0, right: 0, left: 0 },
         tabBarItemStyle: {
           justifyContent: 'center',
@@ -25,8 +39,16 @@ export default function CustomerLayout() {
           marginVertical: 8,
           marginHorizontal: 6,
           borderRadius: 12,
-          paddingBottom: 6,
-          paddingTop: 6,
+          paddingBottom: showLabel ? 6 : 0,
+          paddingTop: showLabel ? 6 : 0,
+          overflow: 'hidden',
+          ...Platform.select({
+            web: {
+              outlineStyle: 'none',
+              outlineWidth: 0,
+            },
+            default: {},
+          }),
         },
         tabBarIconStyle: {
           justifyContent: 'center',

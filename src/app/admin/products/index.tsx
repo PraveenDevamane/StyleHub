@@ -91,8 +91,11 @@ export default function AdminProductsListScreen() {
           <Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>
             {item.name}
           </Text>
-          <Text style={[styles.productMeta, { color: colors.textSecondary }]}>
-            {item.product_code ? `${item.product_code} • ` : ''}{item.categories?.name} • {item.subcategory}
+          <Text style={[styles.productMeta, { color: colors.textSecondary }]} numberOfLines={1}>
+            {item.product_code ? `${item.product_code} • ` : ''}ID: <Text style={{ userSelect: 'text' } as any}>{item.id}</Text>
+          </Text>
+          <Text style={[styles.productMeta, { color: colors.textSecondary }]} numberOfLines={1}>
+            {item.categories?.name} • {item.subcategory}
           </Text>
           <View style={styles.pricingRow}>
             <Text style={[styles.price, { color: colors.text }]}>${item.price}</Text>

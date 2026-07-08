@@ -64,6 +64,19 @@ export default function CategoriesScreen() {
   const { addFavorite, removeFavorite, isFavorite } = useFavoritesStore();
 
   const requestedCategoryId = typeof params.categoryId === 'string' ? params.categoryId : null;
+  const [prevRequestedId, setPrevRequestedId] = useState<string | null>(null);
+
+  if (requestedCategoryId !== prevRequestedId) {
+    setPrevRequestedId(requestedCategoryId);
+    setSelectedCatId(requestedCategoryId);
+    setSelectedSub(null);
+  }
+
+  // Set default category if not selected yet and categories loaded
+  if (categories && categories.length > 0 && !selectedCatId) {
+    setSelectedCatId(categories[0].id);
+  }
+
   const activeCatId = selectedCatId ?? requestedCategoryId ?? categories?.[0]?.id ?? null;
   const activeCategoryName = categories?.find((c) => c.id === activeCatId)?.name.toLowerCase() || 'clothing';
   const activeCategoryLabel = categories?.find((c) => c.id === activeCatId)?.name || 'Catalog';

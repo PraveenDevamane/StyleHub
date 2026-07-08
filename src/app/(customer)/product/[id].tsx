@@ -197,6 +197,17 @@ export default function ProductDetailScreen() {
             <View style={[styles.detailsPanel, { backgroundColor: colors.backgroundElement, borderColor: colors.cardBorder }]}>
               <Text style={[styles.brandLabel, { color: colors.textSecondary }]}>{product.subcategory}</Text>
               <Text style={[styles.productTitle, { color: colors.text }]}>{product.name}</Text>
+              
+              <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginTop: 4, marginBottom: 8 }}>
+                {product.product_code ? (
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textSecondary }}>
+                    Code: {product.product_code}
+                  </Text>
+                ) : null}
+                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                  ID: <Text style={{ fontWeight: '700', color: colors.textSecondary, userSelect: 'text' } as any}>{product.id}</Text>
+                </Text>
+              </View>
 
               <View style={styles.priceRow}>
                 {product.discounted_price ? (

@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, Search, Plus, Minus, Info, Layers, RefreshCw, Camera } from 'lucide-react-native';
+import { ChevronLeft, Search, Plus, Minus, Info, Layers, RefreshCw } from 'lucide-react-native';
 import { useThemeStore } from '@/store/themeStore';
 import { Colors } from '@/constants/theme';
 import { useCategories, useProducts } from '@/hooks/useProducts';
@@ -21,7 +21,6 @@ import { db } from '@/services/firebase';
 import { collection, doc, updateDoc, addDoc } from 'firebase/firestore';
 import { useQueryClient } from '@tanstack/react-query';
 import CachedImage from '@/components/CachedImage';
-import VisualSearchModal from '@/components/VisualSearchModal';
 import { Product } from '@/types';
 import { showAlert } from '@/utils/alert';
 
@@ -219,30 +218,7 @@ export default function AdminInventoryScreen() {
   const [activeShelfCode, setActiveShelfCode] = useState<string | null>(null);
 
   const [updatingProductId, setUpdatingProductId] = useState<string | null>(null);
-  const [isVisualSearchVisible, setIsVisualSearchVisible] = useState(false);
 
-  const handleLocateFromVisualSearch = (locationCode: string) => {
-    const parts = locationCode.split('-');
-    if (parts.length >= 1) {
-      const areaCode = parts[0];
-      setActiveAreaCode(areaCode);
-      
-      if (parts.length >= 2) {
-        const zoneCode = parts[1];
-        setActiveZoneCode(zoneCode);
-        
-        if (parts.length >= 3) {
-          const shelfCode = parts[2];
-          setActiveShelfCode(shelfCode);
-        } else {
-          setActiveShelfCode(null);
-        }
-      } else {
-        setActiveZoneCode(null);
-        setActiveShelfCode(null);
-      }
-    }
-  };
 
   // Debounce search input
   useEffect(() => {
@@ -471,12 +447,6 @@ export default function AdminInventoryScreen() {
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>STORE LAYOUT & INVENTORY</Text>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <TouchableOpacity
-            style={[styles.backBtn, { backgroundColor: colors.backgroundSelected }]}
-            onPress={() => setIsVisualSearchVisible(true)}
-          >
-            <Camera size={16} color={colors.text} />
-          </TouchableOpacity>
           <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.backgroundSelected }]} onPress={() => refetch()}>
             <RefreshCw size={16} color={colors.text} />
           </TouchableOpacity>
@@ -744,13 +714,6 @@ export default function AdminInventoryScreen() {
 
         <View style={{ height: 100 }} />
       </ScrollView>
-
-      <VisualSearchModal
-        visible={isVisualSearchVisible}
-        onClose={() => setIsVisualSearchVisible(false)}
-        onLocateOnMap={handleLocateFromVisualSearch}
-        isAdminMode
-      />
     </SafeAreaView>
   );
 }

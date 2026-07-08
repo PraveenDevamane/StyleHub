@@ -11,14 +11,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Camera, Clock, Heart, Search, X } from 'lucide-react-native';
+import { ArrowLeft, Clock, Heart, Search, X } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useThemeStore } from '@/store/themeStore';
 import { Colors } from '@/constants/theme';
 import { useProducts } from '@/hooks/useProducts';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import CachedImage from '@/components/CachedImage';
-import VisualSearchModal from '@/components/VisualSearchModal';
 import { Product } from '@/types';
 
 const RECENT_SEARCHES_KEY = 'stylehub-recent-searches';
@@ -38,7 +37,7 @@ export default function SearchScreen() {
   const [inputVal, setInputVal] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [isVisualSearchVisible, setIsVisualSearchVisible] = useState(false);
+
 
   const { addFavorite, removeFavorite, isFavorite } = useFavoritesStore();
 
@@ -172,13 +171,9 @@ export default function SearchScreen() {
               autoFocus
               returnKeyType="search"
             />
-            {inputVal.length > 0 ? (
+            {inputVal.length > 0 && (
               <TouchableOpacity onPress={() => setInputVal('')} style={styles.iconButton}>
                 <X size={16} color={colors.text} />
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity onPress={() => setIsVisualSearchVisible(true)} style={styles.iconButton}>
-                <Camera size={17} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
           </View>
@@ -267,11 +262,6 @@ export default function SearchScreen() {
           )}
         </View>
       )}
-
-      <VisualSearchModal
-        visible={isVisualSearchVisible}
-        onClose={() => setIsVisualSearchVisible(false)}
-      />
     </SafeAreaView>
   );
 }
