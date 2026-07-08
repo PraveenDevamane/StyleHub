@@ -52,6 +52,15 @@ export default function AdminProductsListScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              // Delete images from Google Drive if any exist
+              const imageUrls = product.image_urls || product.product_images?.map((img) => img.image_url) || [];
+              if (imageUrls.length > 0) {
+                const { deleteFromGoogleDrive } = await import('@/services/googleDrive');
+                for (const url of imageUrls) {
+                  await deleteFromGoogleDrive(url);
+                }
+              }
+
               const { doc, deleteDoc } = await import('firebase/firestore');
               const docRef = doc(db, 'products', product.id);
               await deleteDoc(docRef);

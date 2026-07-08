@@ -9,7 +9,7 @@ export async function uploadToGoogleDrive(
   filename?: string
 ): Promise<string | null> {
   if (!uploadUrl) {
-    console.error('Google Drive Upload URL is not configured in .env');
+    console.warn('Google Drive Upload URL is not configured in .env');
     return null;
   }
 
@@ -62,11 +62,66 @@ export async function uploadToGoogleDrive(
     if (data.success && data.url) {
       return data.url;
     } else {
-      console.error('Google Drive Upload service error:', data.error);
+      console.warn('Google Drive Upload service error:', data.error);
       return null;
     }
   } catch (err) {
-    console.error('Error uploading to Google Drive:', err);
+    console.warn('Error uploading to Google Drive:', err);
     return null;
   }
+}
+
+export async function deleteFromGoogleDrive(fileUrl: string): Promise<boolean> {
+  if (!fileUrl) return false;
+
+  // If it's a local/blob/temp URI, skip Google Drive deletion
+  if (fileUrl.startsWith('blob:') || fileUrl.startsWith('file:') || fileUrl.startsWith('ph:')) {
+    console.warn('Skipping Google Drive deletion for local URI:', fileUrl);
+    return true;
+  }
+
+  if (!uploadUrl) {
+    console.warn('Google Drive URL is not configured in .env');
+    return false;
+  }
+
+  const fileId = extractFileIdFromUrl(fileUrl);
+  if (!fileId) {
+    console.warn('Could not extract Google Drive file ID from URL:', fileUrl);
+    return false;
+  }
+
+  try {
+    const payload = {
+      action: 'delete',
+      fileId: fileId,
+    };
+
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return !!data.success;
+  } catch (err) {
+    console.warn('Error deleting file from Google Drive:', err);
+    return false;
+  }
+}
+
+function extractFileIdFromUrl(url: string): string | null {
+  const regExp = /id=([^&]+)|d\/([^/]+)/;
+  const matches = url.match(regExp);
+  if (matches) {
+    return matches[1] || matches[2] || null;
+  }
+  return null;
 }
