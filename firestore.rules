@@ -33,5 +33,11 @@ service cloud.firestore {
       allow get, list, create: if isAdmin();
       allow update, delete: if false;
     }
+
+    // Catch-all: deny access to any collection not explicitly defined above.
+    // This prevents accidental exposure if new collections are added in the future.
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }
