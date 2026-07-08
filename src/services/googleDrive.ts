@@ -1,20 +1,61 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
+import { storage } from './firebase';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 const uploadUrl = process.env.EXPO_PUBLIC_GOOGLE_DRIVE_UPLOAD_URL || '';
 const defaultFolderId = process.env.EXPO_PUBLIC_GOOGLE_DRIVE_FOLDER_ID || '';
+
+// Fallback upload helper using Firebase Storage
+export async function uploadToFirebaseStorage(
+  localUri: string,
+  filename: string
+): Promise<string | null> {
+  try {
+    const storageRef = ref(storage, `products/${filename}`);
+    
+    // Fetch blob data
+    const response = await fetch(localUri);
+    const blob = await response.blob();
+    
+    // Upload bytes
+    await uploadBytes(storageRef, blob);
+    
+    // Get public download URL
+    const downloadUrl = await getDownloadURL(storageRef);
+    console.log('Successfully uploaded to Firebase Storage fallback:', downloadUrl);
+    return downloadUrl;
+  } catch (err) {
+    console.warn('Error uploading to Firebase Storage fallback:', err);
+    return null;
+  }
+}
+
+// Fallback delete helper using Firebase Storage
+export async function deleteFromFirebaseStorage(fileUrl: string): Promise<boolean> {
+  try {
+    const storageRef = ref(storage, fileUrl);
+    await deleteObject(storageRef);
+    console.log('Successfully deleted from Firebase Storage:', fileUrl);
+    return true;
+  } catch (err) {
+    console.warn('Error deleting from Firebase Storage:', err);
+    return false;
+  }
+}
 
 export async function uploadToGoogleDrive(
   localUri: string,
   filename?: string
 ): Promise<string | null> {
+  const fname = filename || localUri.split('/').pop() || `upload_${Date.now()}.jpg`;
+
   if (!uploadUrl) {
-    console.warn('Google Drive Upload URL is not configured in .env');
-    return null;
+    console.warn('Google Drive Upload URL is not configured in .env. Falling back to Firebase Storage.');
+    return uploadToFirebaseStorage(localUri, fname);
   }
 
   try {
-    const fname = filename || localUri.split('/').pop() || 'upload.jpg';
     const ext = fname.split('.').pop() || 'jpg';
     const mimeType = `image/${ext === 'png' ? 'png' : 'jpeg'}`;
 
@@ -63,16 +104,21 @@ export async function uploadToGoogleDrive(
       return data.url;
     } else {
       console.warn('Google Drive Upload service error:', data.error);
-      return null;
+      throw new Error(data.error || 'Unknown error');
     }
   } catch (err) {
-    console.warn('Error uploading to Google Drive:', err);
-    return null;
+    console.warn('Error uploading to Google Drive. Falling back to Firebase Storage:', err);
+    return uploadToFirebaseStorage(localUri, fname);
   }
 }
 
 export async function deleteFromGoogleDrive(fileUrl: string): Promise<boolean> {
   if (!fileUrl) return false;
+
+  // If it's a Firebase Storage URL, delete it from Firebase Storage
+  if (fileUrl.startsWith('https://firebasestorage.googleapis.com')) {
+    return deleteFromFirebaseStorage(fileUrl);
+  }
 
   // If it's a local/blob/temp URI, skip Google Drive deletion
   if (fileUrl.startsWith('blob:') || fileUrl.startsWith('file:') || fileUrl.startsWith('ph:')) {

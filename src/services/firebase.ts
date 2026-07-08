@@ -2,6 +2,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 // @ts-ignore
 import { initializeAuth, getReactNativePersistence, getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 import { getAnalytics, Analytics } from 'firebase/analytics';
 import { getPerformance, FirebasePerformance } from 'firebase/performance';
 import { Platform } from 'react-native';
@@ -30,6 +31,7 @@ const auth = (() => {
   }
 })();
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 let analytics: Analytics | null = null;
 let performance: FirebasePerformance | null = null;
@@ -43,4 +45,4 @@ if (Platform.OS === 'web' && typeof window !== 'undefined') {
   }
 }
 
-export { app, auth, db, analytics, performance };
+export { app, auth, db, storage, analytics, performance };
