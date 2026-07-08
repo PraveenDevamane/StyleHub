@@ -90,7 +90,7 @@ export default function AdminProductsListScreen() {
             {item.name}
           </Text>
           <Text style={[styles.productMeta, { color: colors.textSecondary }]}>
-            {item.categories?.name} • {item.subcategory}
+            {item.product_code ? `${item.product_code} • ` : ''}{item.categories?.name} • {item.subcategory}
           </Text>
           <View style={styles.pricingRow}>
             <Text style={[styles.price, { color: colors.text }]}>${item.price}</Text>

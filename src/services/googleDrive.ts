@@ -1,4 +1,5 @@
 import * as FileSystem from 'expo-file-system/legacy';
+import { Platform } from 'react-native';
 
 const uploadUrl = process.env.EXPO_PUBLIC_GOOGLE_DRIVE_UPLOAD_URL || '';
 const defaultFolderId = process.env.EXPO_PUBLIC_GOOGLE_DRIVE_FOLDER_ID || '';
@@ -17,12 +18,26 @@ export async function uploadToGoogleDrive(
     const ext = fname.split('.').pop() || 'jpg';
     const mimeType = `image/${ext === 'png' ? 'png' : 'jpeg'}`;
 
-    // Use expo-file-system to read file as base64 directly.
-    // This avoids the React Native limitation where Blob constructor
-    // does not support ArrayBuffer/ArrayBufferView.
-    const base64 = await FileSystem.readAsStringAsync(localUri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
+    let base64 = '';
+
+    if (Platform.OS === 'web') {
+      const response = await fetch(localUri);
+      const blob = await response.blob();
+      base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          const base64Data = result.split(',')[1];
+          resolve(base64Data);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } else {
+      base64 = await FileSystem.readAsStringAsync(localUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+    }
 
     const payload = {
       base64,

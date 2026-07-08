@@ -298,7 +298,7 @@ type ProductFormSchema = z.infer<typeof productFormSchema>;
 
 export default function AdminProductEditorScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const { id, locationCode } = useLocalSearchParams();
   const queryClient = useQueryClient();
   const theme = useThemeStore((state) => state.theme);
   const colors = Colors[theme];
@@ -387,7 +387,7 @@ export default function AdminProductEditorScreen() {
     subcategoryVal || ''
   );
 
-  // Populate form in Edit mode
+  // Populate form in Edit mode or pre-fill location if provided via query param
   useEffect(() => {
     if (isEditMode && product) {
       setValue('name', product.name);
@@ -418,8 +418,20 @@ export default function AdminProductEditorScreen() {
       } else if (product.image_urls) {
         setExistingImageUrls(product.image_urls);
       }
+    } else if (!isEditMode && locationCode) {
+      setValue('storage_location', locationCode as string);
+      const parsed = parseLocationCode(locationCode as string);
+      if (parsed) {
+        setSelectedAreaCode(parsed.area);
+        setSelectedZoneCode(parsed.zone);
+        setSelectedShelfCode(parsed.shelf);
+        setIsCustomLocation(false);
+      } else {
+        setCustomLocation(locationCode as string);
+        setIsCustomLocation(true);
+      }
     }
-  }, [isEditMode, product]);
+  }, [isEditMode, product, locationCode]);
 
   const requestPermissions = async () => {
     if (Platform.OS !== 'web') {
@@ -544,7 +556,7 @@ export default function AdminProductEditorScreen() {
       // Merge existing Drive URLs with newly uploaded ones
       const allImageUrls = [...existingImageUrls, ...uploadedUrls];
 
-      const productPayload = {
+      const productPayload: any = {
         name: data.name,
         description: data.description || null,
         category_id: data.category_id,
@@ -561,6 +573,7 @@ export default function AdminProductEditorScreen() {
       let productId = id as string;
 
       if (isEditMode) {
+        productPayload.product_code = product?.product_code || `SH-${Math.floor(10000 + Math.random() * 90000)}`;
         // Update product metadata in Firestore
         const docRef = doc(db, 'products', productId);
         
@@ -583,6 +596,7 @@ export default function AdminProductEditorScreen() {
         }
       } else {
         // Insert new product document in Firestore
+        productPayload.product_code = `SH-${Math.floor(10000 + Math.random() * 90000)}`;
         const docRef = await addDoc(collection(db, 'products'), {
           ...productPayload,
           created_at: new Date().toISOString(),
@@ -682,6 +696,40 @@ export default function AdminProductEditorScreen() {
         <Text style={[styles.sectionHeading, { color: colors.textSecondary, marginTop: 24 }]}>PRODUCT METADATA</Text>
 
         <View style={styles.form}>
+          {/* Unique Product ID */}
+          {isEditMode && product?.product_code ? (
+            <View style={{ marginBottom: 16 }}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>PRODUCT ID CODE</Text>
+              <View style={{
+                padding: 12,
+                borderRadius: 8,
+                backgroundColor: colors.backgroundSelected,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.accent }}>
+                  {product.product_code}
+                </Text>
+              </View>
+            </View>
+          ) : !isEditMode ? (
+            <View style={{ marginBottom: 16 }}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>PRODUCT ID CODE</Text>
+              <View style={{
+                padding: 12,
+                borderRadius: 8,
+                backgroundColor: colors.backgroundSelected,
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderStyle: 'dashed',
+              }}>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
+                  ✨ Will be automatically assigned upon creation
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
           <Text style={[styles.label, { color: colors.textSecondary }]}>PRODUCT NAME</Text>
           <Controller
             control={control}
@@ -920,7 +968,7 @@ export default function AdminProductEditorScreen() {
             </View>
 
             {/* ML Location Suggestions */}
-            {nameVal && nameVal.trim().length >= 2 && suggestions.length > 0 && (
+            {!!nameVal && nameVal.trim().length >= 2 && suggestions.length > 0 ? (
               <View style={{ marginBottom: 16, padding: 12, borderRadius: 12, backgroundColor: colors.backgroundSelected, borderWidth: 1, borderColor: colors.border }}>
                 <Text style={{ fontSize: 10, fontWeight: '800', color: colors.accent, letterSpacing: 0.8, marginBottom: 8 }}>
                   🤖 SMART ML SUGGESTED SLOTS (CLICK TO ALLOT)
@@ -965,7 +1013,7 @@ export default function AdminProductEditorScreen() {
                   })}
                 </ScrollView>
               </View>
-            )}
+            ) : null}
 
             {isCustomLocation ? (
               <View>

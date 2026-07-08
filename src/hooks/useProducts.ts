@@ -104,7 +104,10 @@ export function useProducts(filters: ProductFilters = {}) {
       }
       if (filters.searchQuery) {
         const term = filters.searchQuery.toLowerCase();
-        productsList = productsList.filter((p) => p.name.toLowerCase().includes(term));
+        productsList = productsList.filter((p) => 
+          p.name.toLowerCase().includes(term) ||
+          p.product_code?.toLowerCase().includes(term)
+        );
       }
 
       // Sort

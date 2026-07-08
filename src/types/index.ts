@@ -17,6 +17,7 @@ export interface Product {
   featured: boolean;
   image_urls?: string[];
   storage_location?: string | null;
+  product_code?: string;
   created_at: string;
   updated_at: string;
   // Included fields via joins

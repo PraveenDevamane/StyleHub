@@ -11,13 +11,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Search, X, Clock, Heart } from 'lucide-react-native';
+import { ArrowLeft, Search, X, Clock, Heart, Camera } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useThemeStore } from '@/store/themeStore';
 import { Colors } from '@/constants/theme';
 import { useProducts } from '@/hooks/useProducts';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import CachedImage from '@/components/CachedImage';
+import VisualSearchModal from '@/components/VisualSearchModal';
 import { Product } from '@/types';
 
 const RECENT_SEARCHES_KEY = 'stylehub-recent-searches';
@@ -31,6 +32,7 @@ export default function SearchScreen() {
   const [inputVal, setInputVal] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [isVisualSearchVisible, setIsVisualSearchVisible] = useState(false);
 
   const { addFavorite, removeFavorite, isFavorite } = useFavoritesStore();
 
@@ -42,11 +44,6 @@ export default function SearchScreen() {
     return () => clearTimeout(timer);
   }, [inputVal]);
 
-  // Load recent searches from AsyncStorage
-  useEffect(() => {
-    loadRecentSearches();
-  }, []);
-
   const loadRecentSearches = async () => {
     try {
       const stored = await AsyncStorage.getItem(RECENT_SEARCHES_KEY);
@@ -57,6 +54,11 @@ export default function SearchScreen() {
       console.error('Failed to load recent searches:', e);
     }
   };
+
+  // Load recent searches from AsyncStorage
+  useEffect(() => {
+    loadRecentSearches();
+  }, []);
 
   const saveRecentSearch = async (query: string) => {
     if (!query) return;
@@ -148,9 +150,13 @@ export default function SearchScreen() {
             autoFocus
             returnKeyType="search"
           />
-          {inputVal.length > 0 && (
+          {inputVal.length > 0 ? (
             <TouchableOpacity onPress={() => setInputVal('')} style={styles.clearBtn}>
               <X size={14} color={colors.text} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={() => setIsVisualSearchVisible(true)} style={styles.clearBtn}>
+              <Camera size={16} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -221,12 +227,17 @@ export default function SearchScreen() {
           ) : (
             <View style={styles.center}>
               <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                No products found matching "{debouncedQuery}"
+                No products found matching &quot;{debouncedQuery}&quot;
               </Text>
             </View>
           )}
         </View>
       )}
+
+      <VisualSearchModal
+        visible={isVisualSearchVisible}
+        onClose={() => setIsVisualSearchVisible(false)}
+      />
     </SafeAreaView>
   );
 }

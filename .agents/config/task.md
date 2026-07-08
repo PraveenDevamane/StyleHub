@@ -1,0 +1,6 @@
+- [x] Update types definition and `useProducts` search hook
+- [x] Add unique code generation and pre-filled location logic to `editor.tsx`
+- [x] Build the `VisualSearchModal` component with a scanning animation
+- [x] Integrate deep-linking and visual search in `inventory.tsx`
+- [x] Integrate visual search and product code in `search.tsx` and `products/index.tsx`
+- [x] Verify everything works and document the changes
