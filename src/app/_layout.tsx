@@ -19,7 +19,6 @@ const queryClient = new QueryClient({
       staleTime: 1000 * 60 * 5, // 5 minutes cache freshness
       gcTime: 1000 * 60 * 30, // 30 minutes garbage collection
       refetchOnWindowFocus: false, // Turn off automatic refetching on window focus
-      refetchOnMount: false, // Turn off automatic refetching on mount
       retry: 1, // Only retry failed requests once
     },
   },
