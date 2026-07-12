@@ -51,33 +51,54 @@ export async function uploadToGoogleDrive(
   const fname = filename || localUri.split('/').pop() || `upload_${Date.now()}.jpg`;
 
   if (!uploadUrl) {
-    console.warn('Google Drive Upload URL is not configured in .env. Falling back to Firebase Storage.');
+    console.warn('[Drive Upload] Upload URL is not configured. Falling back to Firebase Storage.');
     return uploadToFirebaseStorage(localUri, fname);
   }
 
   try {
+    console.log(`[Drive Upload] Starting upload for "${fname}"...`);
+    console.log(`[Drive Upload] Upload URL: ${uploadUrl.substring(0, 50)}...`);
+    console.log(`[Drive Upload] Folder ID: ${defaultFolderId}`);
+
     const ext = fname.split('.').pop() || 'jpg';
     const mimeType = `image/${ext === 'png' ? 'png' : 'jpeg'}`;
 
     let base64 = '';
 
     if (Platform.OS === 'web') {
+      console.log('[Drive Upload] Web platform: fetching blob from local URI...');
       const response = await fetch(localUri);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch local image: ${response.status} ${response.statusText}`);
+      }
       const blob = await response.blob();
+      console.log(`[Drive Upload] Blob created: ${blob.size} bytes, type: ${blob.type}`);
+
       base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => {
           const result = reader.result as string;
           const base64Data = result.split(',')[1];
+          if (!base64Data || base64Data.length === 0) {
+            reject(new Error('FileReader produced empty base64 data'));
+            return;
+          }
           resolve(base64Data);
         };
-        reader.onerror = reject;
+        reader.onerror = () => reject(new Error('FileReader failed to read blob'));
         reader.readAsDataURL(blob);
       });
     } else {
+      console.log('[Drive Upload] Native platform: reading file as base64...');
       base64 = await FileSystem.readAsStringAsync(localUri, {
         encoding: FileSystem.EncodingType.Base64,
       });
+    }
+
+    console.log(`[Drive Upload] Base64 length: ${base64.length} chars (~${Math.round(base64.length * 0.75 / 1024)} KB)`);
+
+    if (!base64 || base64.length === 0) {
+      throw new Error('Base64 data is empty after encoding');
     }
 
     const payload = {
@@ -87,7 +108,7 @@ export async function uploadToGoogleDrive(
       folderId: defaultFolderId,
     };
 
-    // Use text/plain Content-Type to prevent triggering CORS preflight check on Google Apps Script
+    console.log('[Drive Upload] Sending POST to Google Apps Script...');
     const uploadRes = await fetch(uploadUrl, {
       method: 'POST',
       headers: {
@@ -96,19 +117,35 @@ export async function uploadToGoogleDrive(
       body: JSON.stringify(payload),
     });
 
+    console.log(`[Drive Upload] Response status: ${uploadRes.status}, redirected: ${uploadRes.redirected}, type: ${uploadRes.type}`);
+
+    // Read the raw response text first to diagnose issues
+    const rawText = await uploadRes.text();
+    console.log(`[Drive Upload] Raw response (first 500 chars): ${rawText.substring(0, 500)}`);
+
     if (!uploadRes.ok) {
-      throw new Error(`HTTP error! status: ${uploadRes.status}`);
+      throw new Error(`HTTP error! status: ${uploadRes.status}, body: ${rawText.substring(0, 200)}`);
     }
 
-    const data = await uploadRes.json();
+    // Try to parse as JSON
+    let data: any;
+    try {
+      data = JSON.parse(rawText);
+    } catch (parseErr) {
+      console.error('[Drive Upload] Failed to parse response as JSON. Raw response:', rawText.substring(0, 300));
+      throw new Error(`Response is not valid JSON. First 200 chars: ${rawText.substring(0, 200)}`);
+    }
+
     if (data.success && data.url) {
+      console.log(`[Drive Upload] ✅ Success! File URL: ${data.url}`);
       return data.url;
     } else {
-      console.warn('Google Drive Upload service error:', data.error);
-      throw new Error(data.error || 'Unknown error');
+      console.warn('[Drive Upload] Service returned error:', data.error || data);
+      throw new Error(data.error || 'Unknown error from Drive upload service');
     }
   } catch (err) {
-    console.warn('Error uploading to Google Drive. Falling back to Firebase Storage:', err);
+    console.error('[Drive Upload] ❌ Upload failed:', err);
+    console.log('[Drive Upload] Falling back to Firebase Storage...');
     return uploadToFirebaseStorage(localUri, fname);
   }
 }
